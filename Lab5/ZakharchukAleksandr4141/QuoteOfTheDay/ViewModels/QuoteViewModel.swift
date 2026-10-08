@@ -19,11 +19,11 @@ final class QuoteViewModel {
 
     init(
         repository: any QuoteRepositoryProtocol = QuoteRepository(),
-        storage: any QuoteOfTheDayStorageProtocol = QuoteOfTheDayStorage(),
+        storage: (any QuoteOfTheDayStorageProtocol)? = nil,
         favoritesService: any FavoritesServiceProtocol
     ) {
         self.repository = repository
-        self.storage = storage
+        self.storage = storage ?? QuoteOfTheDayStorage()
         self.favoritesService = favoritesService
     }
 
