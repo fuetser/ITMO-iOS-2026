@@ -1,19 +1,29 @@
 import XCTest
 
+@MainActor
 final class QuoteOfTheDayUITests: XCTestCase {
-  @MainActor
-  private func launchApp() -> XCUIApplication {
+  private var app: XCUIApplication!
+
+  override func setUp() async throws {
+    try await super.setUp()
+
     continueAfterFailure = false
-    let app = XCUIApplication()
+    app = XCUIApplication()
     app.launchArguments = ["--ui-testing"]
+
     app.launch()
+
     XCTAssertTrue(app.staticTexts["quoteText"].waitForExistence(timeout: 10))
-    return app
   }
 
-  @MainActor
+  override func tearDown() async throws {
+    app?.terminate()
+    app = nil
+
+    try await super.tearDown()
+  }
+
   func testAnotherQuoteChangesTextAndAuthor() {
-    let app = launchApp()
     XCTAssertEqual(app.staticTexts["quoteText"].label, "«First test quote.»")
     XCTAssertEqual(app.staticTexts["quoteAuthor"].label, "— First Author")
 
@@ -22,32 +32,42 @@ final class QuoteOfTheDayUITests: XCTestCase {
     let updatedQuote = NSPredicate(format: "label == %@", "«Second test quote.»")
     expectation(for: updatedQuote, evaluatedWith: app.staticTexts["quoteText"])
     waitForExpectations(timeout: 5)
+
     XCTAssertEqual(app.staticTexts["quoteAuthor"].label, "— Second Author")
   }
 
-  @MainActor
   func testFavoriteCanBeAddedAndRemoved() {
-    let app = launchApp()
     let favoriteButton = app.buttons["toggleFavoriteButton"]
+
     XCTAssertEqual(favoriteButton.label, "В избранное")
+
     favoriteButton.tap()
+
     let added = NSPredicate(format: "label == %@ AND enabled == true", "Убрать из избранного")
     expectation(for: added, evaluatedWith: favoriteButton)
     waitForExpectations(timeout: 5)
+
     app.buttons["openFavoritesButton"].tap()
+
     let savedQuote = app.staticTexts
       .matching(identifier: "favoriteQuoteText")
       .matching(NSPredicate(format: "label == %@", "«First test quote.»"))
       .firstMatch
+
     XCTAssertTrue(savedQuote.waitForExistence(timeout: 5))
+
     app.buttons["closeFavoritesButton"].tap()
+
     XCTAssertTrue(favoriteButton.waitForExistence(timeout: 5))
+
     favoriteButton.tap()
 
     let removed = NSPredicate(format: "label == %@ AND enabled == true", "В избранное")
     expectation(for: removed, evaluatedWith: favoriteButton)
     waitForExpectations(timeout: 5)
+
     app.buttons["openFavoritesButton"].tap()
+
     XCTAssertTrue(app.staticTexts["Пока пусто"].waitForExistence(timeout: 5))
     XCTAssertFalse(savedQuote.exists)
   }

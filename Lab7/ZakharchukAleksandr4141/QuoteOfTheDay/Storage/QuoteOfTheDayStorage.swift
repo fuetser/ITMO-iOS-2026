@@ -14,15 +14,24 @@ protocol QuoteOfTheDayStorageProtocol {
 }
 
 @MainActor
+protocol UserDefaultsProtocol {
+  func set(_ value: Any?, forKey defaultName: String)
+  func data(forKey defaultName: String) -> Data?
+  func removeObject(forKey defaultName: String)
+}
+
+extension UserDefaults: UserDefaultsProtocol {}
+
+@MainActor
 final class QuoteOfTheDayStorage: QuoteOfTheDayStorageProtocol {
   private enum Keys {
     static let snapshot = "quoteOfTheDay.snapshot"
   }
 
-  private let defaults: UserDefaults
+  private let defaults: any UserDefaultsProtocol
   private let calendar: Calendar
 
-  init(defaults: UserDefaults = .standard, calendar: Calendar = .current) {
+  init(defaults: any UserDefaultsProtocol = UserDefaults.standard, calendar: Calendar = .current) {
     self.defaults = defaults
     self.calendar = calendar
   }

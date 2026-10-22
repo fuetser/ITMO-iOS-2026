@@ -3,35 +3,68 @@ import XCTest
 
 @testable import QuoteOfTheDay
 
+@MainActor
 final class QuoteOfTheDayStorageTests: XCTestCase {
-  @MainActor
-  func testSaveRestoresQuoteAndDateInNewStorageInstance() throws {
-    let suiteName = "QuoteOfTheDayStorageTests.\(UUID().uuidString)"
-    let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-    defer { defaults.removePersistentDomain(forName: suiteName) }
-    let storage = QuoteOfTheDayStorage(defaults: defaults)
-    let quote = Quote(text: "Stay curious.", author: "Test Author")
-    let date = Date(timeIntervalSince1970: 1_700_000_000)
+  private var defaults: UserDefaultsMock!
+  private var storage: QuoteOfTheDayStorage!
 
+  private let quote = Quote(text: "Stay curious.", author: "Test Author")
+  private let date = Date(timeIntervalSince1970: 1_700_000_000)
+
+  override func setUp() async throws {
+    try await super.setUp()
+
+    defaults = UserDefaultsMock()
+    storage = QuoteOfTheDayStorage(defaults: defaults)
+  }
+
+  override func tearDown() async throws {
+    storage = nil
+    defaults = nil
+
+    try await super.tearDown()
+  }
+
+  func testSaveRestoresQuoteAndDateInNewStorageInstance() throws {
     try storage.save(quote: quote, date: date)
 
     let restoredStorage = QuoteOfTheDayStorage(defaults: defaults)
-    XCTAssertEqual(restoredStorage.load(), SavedQuote(quote: quote, date: date))
+    let restoredQuote = restoredStorage.load()
+
+    XCTAssertEqual(restoredQuote, SavedQuote(quote: quote, date: date))
   }
 
-  @MainActor
   func testClearRemovesSavedQuoteAndPreservesOtherSettings() throws {
-    let suiteName = "QuoteOfTheDayStorageTests.\(UUID().uuidString)"
-    let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-    defer { defaults.removePersistentDomain(forName: suiteName) }
-    let storage = QuoteOfTheDayStorage(defaults: defaults)
     defaults.set("dark", forKey: "theme")
-    try storage.save(quote: Quote(text: "Stay curious.", author: "Test Author"), date: .now)
+    try storage.save(quote: quote, date: date)
+
     XCTAssertNotNil(storage.load())
 
     storage.clear()
 
-    XCTAssertNil(QuoteOfTheDayStorage(defaults: defaults).load())
-    XCTAssertEqual(defaults.string(forKey: "theme"), "dark")
+    let restoredStorage = QuoteOfTheDayStorage(defaults: defaults)
+
+    XCTAssertNil(restoredStorage.load())
+    XCTAssertEqual(defaults.values["theme"] as? String, "dark")
+    XCTAssertEqual(defaults.removedKeys, ["quoteOfTheDay.snapshot"])
+  }
+}
+
+@MainActor
+private final class UserDefaultsMock: UserDefaultsProtocol {
+  private(set) var values: [String: Any] = [:]
+  private(set) var removedKeys: [String] = []
+
+  func set(_ value: Any?, forKey defaultName: String) {
+    values[defaultName] = value
+  }
+
+  func data(forKey defaultName: String) -> Data? {
+    values[defaultName] as? Data
+  }
+
+  func removeObject(forKey defaultName: String) {
+    removedKeys.append(defaultName)
+    values.removeValue(forKey: defaultName)
   }
 }
