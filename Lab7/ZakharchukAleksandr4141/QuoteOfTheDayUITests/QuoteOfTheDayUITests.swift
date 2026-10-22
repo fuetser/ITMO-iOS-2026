@@ -35,7 +35,11 @@ final class QuoteOfTheDayUITests: XCTestCase {
     expectation(for: added, evaluatedWith: favoriteButton)
     waitForExpectations(timeout: 5)
     app.buttons["openFavoritesButton"].tap()
-    XCTAssertTrue(app.staticTexts["«First test quote.»"].waitForExistence(timeout: 5))
+    let savedQuote = app.staticTexts
+      .matching(identifier: "favoriteQuoteText")
+      .matching(NSPredicate(format: "label == %@", "«First test quote.»"))
+      .firstMatch
+    XCTAssertTrue(savedQuote.waitForExistence(timeout: 5))
     app.buttons["closeFavoritesButton"].tap()
     XCTAssertTrue(favoriteButton.waitForExistence(timeout: 5))
     favoriteButton.tap()
@@ -45,6 +49,6 @@ final class QuoteOfTheDayUITests: XCTestCase {
     waitForExpectations(timeout: 5)
     app.buttons["openFavoritesButton"].tap()
     XCTAssertTrue(app.staticTexts["Пока пусто"].waitForExistence(timeout: 5))
-    XCTAssertFalse(app.staticTexts["«First test quote.»"].exists)
+    XCTAssertFalse(savedQuote.exists)
   }
 }

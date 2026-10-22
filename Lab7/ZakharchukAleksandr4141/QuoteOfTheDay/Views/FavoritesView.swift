@@ -120,6 +120,7 @@ struct FavoritesView: View {
         Button { editingFavorite = favorite } label: {
           VStack(alignment: .leading, spacing: 6) {
             Text("«\(favorite.text)»").font(.body).foregroundStyle(.primary)
+              .accessibilityIdentifier("favoriteQuoteText")
             Text("— \(favorite.author)")
               .font(.caption).italic().foregroundStyle(.secondary)
             if !favorite.note.isEmpty {
