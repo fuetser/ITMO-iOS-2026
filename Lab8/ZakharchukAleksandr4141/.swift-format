@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "indentation": { "spaces": 2 },
+  "lineLength": 100,
+  "maximumBlankLines": 1,
+  "lineBreakBeforeEachArgument": true,
+  "lineBreakBeforeControlFlowKeywords": false,
+  "respectsExistingLineBreaks": false,
+  "spacesAroundRangeFormationOperators": false,
+  "rules": {
+    "OrderedImports": true,
+    "OnlyOneTrailingClosureArgument": false,
+    "NeverForceUnwrap": false,
+    "NeverUseForceTry": false
+  }
+}
